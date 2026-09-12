@@ -1,12 +1,12 @@
 name: Build (Windows)
 
 on:
-  push:
-    tags: ["v*"]
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão para nomear o artefato e o MSI (ex.: 1.0.0)"
+        required: false
+        default: "0.0.0"
 
 env:
   WAILS_VERSION: v2.10.2
@@ -45,20 +45,10 @@ jobs:
           dotnet tool install --global wix
           echo "$USERPROFILE/.dotnet/tools" >> "$GITHUB_PATH"
 
-      - name: Resolve version from tag
-        id: version
-        shell: bash
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Stamp app version
         shell: bash
         run: |
-          jq --arg v "${{ steps.version.outputs.version }}" '.info.productVersion = $v' wails.json > wails.json.tmp
+          jq --arg v "${{ inputs.version }}" '.info.productVersion = $v' wails.json > wails.json.tmp
           mv wails.json.tmp wails.json
 
       - name: Build
@@ -67,11 +57,11 @@ jobs:
       - name: Build MSI installer with WiX
         shell: bash
         env:
-          MSI_ASSET: mosaic-${{ steps.version.outputs.version }}-windows-amd64.msi
+          MSI_ASSET: mosaic-${{ inputs.version }}-windows-amd64.msi
         run: |
           wix build build/windows/installer/mosaic.wxs \
             -arch x64 \
-            -d ProductVersion="${{ steps.version.outputs.version }}" \
+            -d ProductVersion="${{ inputs.version }}" \
             -d BuildDir="build/bin" \
             -d IconPath="build/windows/icon.ico" \
             -out "build/bin/$MSI_ASSET"
@@ -82,13 +72,5 @@ jobs:
         with:
           name: mosaic-windows-amd64
           path: |
-            build/bin/mosaicapp.exe
-            ${{ env.MSI_ASSET }}
-
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
             build/bin/mosaicapp.exe
             ${{ env.MSI_ASSET }}

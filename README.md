@@ -68,10 +68,9 @@ wails build                            # macOS/Windows: idem, sem a tag
 ## Build de release (CI)
 
 Três workflows do GitHub Actions (`.github/workflows/build-{linux,macos,windows}.yml`)
-compilam o app para cada plataforma. Eles rodam ao dar push numa tag `vX.Y.Z`
-(ex.: `git tag v1.0.0 && git push origin v1.0.0`) ou manualmente pela aba
-Actions (`workflow_dispatch`); numa tag, os artefatos também são anexados a
-uma Release do GitHub.
+compilam o app para cada plataforma. São disparados manualmente pela aba
+Actions do GitHub (`workflow_dispatch`), na branch `main`, com um campo
+opcional `version` (ex.: `1.0.0`) usado para nomear o artefato gerado.
 
 | Plataforma | Saída |
 |---|---|
