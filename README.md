@@ -70,7 +70,10 @@ wails build                            # macOS/Windows: idem, sem a tag
 Três workflows do GitHub Actions (`.github/workflows/build-{linux,macos,windows}.yml`)
 compilam o app para cada plataforma. São disparados manualmente pela aba
 Actions do GitHub (`workflow_dispatch`), na branch `main`, com um campo
-opcional `version` (ex.: `1.0.0`) usado para nomear o artefato gerado.
+obrigatório `version` (ex.: `1.0.0`). Cada um cria (ou atualiza, se já
+existir) a Release `vX.Y.Z` no GitHub e anexa o binário daquela plataforma
+a ela — rodar os três com a mesma versão produz uma única Release com os
+três artefatos.
 
 | Plataforma | Saída |
 |---|---|

@@ -4,9 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Versão para nomear o artefato e o MSI (ex.: 1.0.0)"
-        required: false
-        default: "0.0.0"
+        description: "Versão da release (ex.: 1.0.0) — cria/atualiza a release vX.Y.Z"
+        required: true
+
+permissions:
+  contents: write
 
 env:
   WAILS_VERSION: v2.10.2
@@ -72,5 +74,14 @@ jobs:
         with:
           name: mosaic-windows-amd64
           path: |
+            build/bin/mosaicapp.exe
+            ${{ env.MSI_ASSET }}
+
+      - name: Create/update release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Mosaic v${{ inputs.version }}
+          files: |
             build/bin/mosaicapp.exe
             ${{ env.MSI_ASSET }}
