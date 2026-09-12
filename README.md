@@ -36,7 +36,7 @@ app.go, main.go           aplicação Wails (bindings expostos ao frontend)
 frontend/                 UI (HTML/CSS/JS puro, empacotado com Vite)
 build/appicon.png         ícone-fonte do app (1024x1024); Wails gera .ico/.icns a partir dele
 build/windows/installer/  fonte WiX (.wxs) do instalador .msi do Windows
-.github/workflows/        pipelines de build para Linux, macOS e Windows
+.github/workflows/build.yml  pipeline de build (um job por SO: Linux, macOS, Windows)
 ```
 
 ## Rodando em desenvolvimento
@@ -67,13 +67,15 @@ wails build                            # macOS/Windows: idem, sem a tag
 
 ## Build de release (CI)
 
-Três workflows do GitHub Actions (`.github/workflows/build-{linux,macos,windows}.yml`)
-compilam o app para cada plataforma. São disparados manualmente pela aba
-Actions do GitHub (`workflow_dispatch`), na branch `main`, com um campo
-obrigatório `version` (ex.: `1.0.0`). Cada um cria (ou atualiza, se já
-existir) a Release `vX.Y.Z` no GitHub e anexa o binário daquela plataforma
-a ela — rodar os três com a mesma versão produz uma única Release com os
-três artefatos.
+Um único workflow do GitHub Actions (`.github/workflows/build.yml`) compila
+o app para as três plataformas, cada uma em seu próprio job/runner
+(`build-linux` → `ubuntu-latest`, `build-macos` → `macos-latest`,
+`build-windows` → `windows-latest`), rodando em sequência (via `needs`) para
+não haver corrida ao criar a mesma Release. É disparado manualmente pela
+aba Actions do GitHub (`workflow_dispatch`), na branch `main`, com um campo
+obrigatório `version` (ex.: `1.0.0`). Cada job cria (ou atualiza, se já
+existir) a Release `vX.Y.Z` e anexa o binário da sua plataforma — ao final,
+a Release fica com os três artefatos.
 
 | Plataforma | Saída |
 |---|---|
