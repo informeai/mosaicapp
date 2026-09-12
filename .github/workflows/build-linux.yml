@@ -1,12 +1,12 @@
 name: Build (Linux)
 
 on:
-  push:
-    tags: ["v*"]
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão para nomear o artefato (ex.: 1.0.0)"
+        required: false
+        default: "0.0.0"
 
 env:
   WAILS_VERSION: v2.10.2
@@ -40,15 +40,6 @@ jobs:
           go install github.com/wailsapp/wails/v2/cmd/wails@${WAILS_VERSION}
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Resolve version from tag
-        id: version
-        run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "version=0.0.0" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build
         # webkit2_41: Ubuntu's current webkit2gtk package is 4.1, not the
         # 4.0 that Wails links against by default.
@@ -56,7 +47,7 @@ jobs:
 
       - name: Package
         env:
-          ASSET: mosaic-${{ steps.version.outputs.version }}-linux-amd64.tar.gz
+          ASSET: mosaic-${{ inputs.version }}-linux-amd64.tar.gz
         run: |
           cd build/bin
           chmod +x mosaicapp
@@ -68,9 +59,3 @@ jobs:
         with:
           name: mosaic-linux-amd64
           path: ${{ env.ASSET }}
-
-      - name: Attach to release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ env.ASSET }}
