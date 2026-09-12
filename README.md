@@ -29,11 +29,14 @@ O banco SQLite fica em `~/.config/mosaicapp/mosaic.db` (Linux),
 ## Estrutura
 
 ```
-internal/chunker/  divisão de conteúdo em blocos (content-defined chunking)
-internal/store/    persistência em SQLite (arquivos, blocos, referências)
-internal/dedup/    serviço que liga chunker + store
-app.go, main.go    aplicação Wails (bindings expostos ao frontend)
-frontend/          UI (HTML/CSS/JS puro, empacotado com Vite)
+internal/chunker/         divisão de conteúdo em blocos (content-defined chunking)
+internal/store/           persistência em SQLite (arquivos, blocos, referências)
+internal/dedup/           serviço que liga chunker + store
+app.go, main.go           aplicação Wails (bindings expostos ao frontend)
+frontend/                 UI (HTML/CSS/JS puro, empacotado com Vite)
+build/appicon.png         ícone-fonte do app (1024x1024); Wails gera .ico/.icns a partir dele
+build/windows/installer/  fonte WiX (.wxs) do instalador .msi do Windows
+.github/workflows/        pipelines de build para Linux, macOS e Windows
 ```
 
 ## Rodando em desenvolvimento
@@ -45,18 +48,57 @@ go install github.com/wailsapp/wails/v2/cmd/wails@latest
 ```
 
 No Linux, o Wails também exige as bibliotecas de desenvolvimento do
-GTK3/WebKit2GTK (pré-requisito do próprio Wails, não deste projeto):
+GTK3/WebKit2GTK (pré-requisito do próprio Wails, não deste projeto). Em
+distribuições recentes (ex.: Ubuntu 24.04) o pacote disponível é o
+WebKit2GTK 4.1, não o 4.0 padrão do Wails, então é preciso a tag de build
+`webkit2_41`:
 
 ```bash
-sudo apt install build-essential libgtk-3-dev libwebkit2gtk-4.1-dev
+sudo apt install build-essential libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
 ```
 
 Com tudo instalado:
 
 ```bash
-wails dev     # modo desenvolvimento, com hot reload do frontend
-wails build   # gera o binário de produção em build/bin
+wails dev                              # modo desenvolvimento, com hot reload do frontend
+wails build -tags webkit2_41           # Linux: gera o binário em build/bin
+wails build                            # macOS/Windows: idem, sem a tag
 ```
+
+## Build de release (CI)
+
+Três workflows do GitHub Actions (`.github/workflows/build-{linux,macos,windows}.yml`)
+compilam o app para cada plataforma. Eles rodam ao dar push numa tag `vX.Y.Z`
+(ex.: `git tag v1.0.0 && git push origin v1.0.0`) ou manualmente pela aba
+Actions (`workflow_dispatch`); numa tag, os artefatos também são anexados a
+uma Release do GitHub.
+
+| Plataforma | Saída |
+|---|---|
+| Linux   | `mosaic-<versão>-linux-amd64.tar.gz` |
+| macOS   | `mosaic-<versão>-macos-universal.zip` (binário universal Intel + Apple Silicon, assinado ad-hoc) |
+| Windows | `mosaicapp.exe` + `mosaic-<versão>-windows-amd64.msi` |
+
+O instalador do Windows é gerado com o [WiX Toolset v5](https://wixtoolset.org/)
+a partir de `build/windows/installer/mosaic.wxs`: instala o app em
+`Program Files\Mosaic`, cria o atalho no Menu Iniciar e usa o ícone gerado a
+partir de `build/appicon.png`. Para gerar o MSI localmente em uma máquina
+Windows com .NET SDK instalado:
+
+```powershell
+wails build -platform windows/amd64 -clean
+dotnet tool install --global wix
+wix build build/windows/installer/mosaic.wxs -arch x64 `
+  -d ProductVersion=1.0.0 `
+  -d BuildDir=build/bin `
+  -d IconPath=build/windows/icon.ico `
+  -out build/bin/mosaic-1.0.0-windows-amd64.msi
+```
+
+Nenhuma das três plataformas assina/notariza os binários com certificado
+pago (macOS: Apple Developer ID; Windows: certificado de assinatura de
+código) — sem eles, o macOS mostra o aviso padrão do Gatekeeper e o Windows
+o do SmartScreen no primeiro uso.
 
 ## Testes
 
