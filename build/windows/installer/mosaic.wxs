@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  WiX v5 source for the Mosaic MSI installer.
+
+  Built by the build-windows.yml workflow via:
+    wix build build/windows/installer/mosaic.wxs -arch x64 \
+      -d ProductVersion=$VERSION \
+      -d BuildDir=build/bin \
+      -d IconPath=build/windows/icon.ico \
+      -out build/bin/mosaic-<version>-windows-amd64.msi
+
+  BuildDir must contain the already-built mosaicapp.exe (from `wails build`),
+  and IconPath the .ico that Wails generates from build/appicon.png.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package name="Mosaic"
+           manufacturer="informeai"
+           version="$(var.ProductVersion)"
+           upgradeCode="0081984D-97B0-42B7-B067-05F3571DAD47"
+           language="1033"
+           scope="perMachine"
+           compressed="yes">
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versão mais recente do Mosaic já está instalada." />
+
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="AppIcon.ico" SourceFile="$(var.IconPath)" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/informeai/mosaicapp" />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Mosaic">
+        <Component Id="MainExecutable" Guid="*">
+          <File Id="MosaicEXE"
+                Source="$(var.BuildDir)/mosaicapp.exe"
+                KeyPath="yes" />
+        </Component>
+      </Directory>
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Component Id="ApplicationShortcut" Guid="*">
+        <Shortcut Id="ApplicationStartMenuShortcut"
+                  Name="Mosaic"
+                  Description="Deduplicação de arquivos offline"
+                  Target="[INSTALLFOLDER]mosaicapp.exe"
+                  WorkingDirectory="INSTALLFOLDER"
+                  Icon="AppIcon.ico" />
+        <RemoveFolder Id="CleanUpShortcut" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                        Key="Software\informeai\Mosaic"
+                        Name="installed"
+                        Type="integer"
+                        Value="1"
+                        KeyPath="yes" />
+      </Component>
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="Mosaic" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="ApplicationShortcut" />
+    </Feature>
+  </Package>
+</Wix>
