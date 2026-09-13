@@ -158,7 +158,10 @@ jobs:
       - name: Install WiX Toolset
         shell: bash
         run: |
-          dotnet tool install --global wix
+          # Pinned to v5.x: WiX v6+ requires accepting the Open Source
+          # Maintenance Fee (OSMF) EULA (https://wixtoolset.org/osmf/) to
+          # run at all, which isn't practical in unattended CI.
+          dotnet tool install --global wix --version 5.0.2
           echo "$USERPROFILE/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Stamp app version
