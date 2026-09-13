@@ -91,7 +91,7 @@ Windows com .NET SDK instalado:
 
 ```powershell
 wails build -platform windows/amd64 -clean
-dotnet tool install --global wix
+dotnet tool install --global wix --version 5.0.2   # v6+ exige aceitar o EULA da OSMF: https://wixtoolset.org/osmf/
 wix build build/windows/installer/mosaic.wxs -arch x64 `
   -d ProductVersion=1.0.0 `
   -d BuildDir=build/bin `
